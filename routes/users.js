@@ -5,7 +5,7 @@ const router = Router();
 
 // Definir rutas de user
 router.get("/test-user", testUser);
-router.get("/registro", register);
+router.post("/register", register);
 
 //Exportar el Router
 export default router;
