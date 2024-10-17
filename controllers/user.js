@@ -1,4 +1,5 @@
 import User from "../models/users.js";
+import bcrypt from "bcrypt";
 
 // Método de prueba del controlador user
 export const testUser = (req, res) => {
@@ -31,8 +32,31 @@ export const register = async (req, res) => {
     let user_to_save = new User(params);
 
     // Control de usuarios duplicados
+    const existingUser = await User.findOne({
+      $or: [
+        { email: user_to_save.email.toLowerCase() },
+        { nick: user_to_save.nick.toLowerCase() },
+      ],
+    });
+
+    // Validar el existingUser
+    if (existingUser) {
+      return res.status(409).send({
+        status: "error",
+        message: "¡El usuario ya existe en la BD!",
+      });
+    }
 
     // Cifrar la contraseña
+    // Genera los saltos para encriptar
+    const salt = await bcrypt.genSalt(10);
+
+    // Encriptar la contraseña y guardarla en hashedPassword
+    const hashedPassword = await bcrypt.hash(user_to_save.password, salt);
+
+    // Asignar la contraseña encriptada al objeto del usauario
+    user_to_save.password = hashedPassword;
+
     // Guardar el usuario en la base de datos
     await user_to_save.save();
 
