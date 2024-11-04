@@ -1,10 +1,10 @@
-import Publication from '../models/publications.js';
-import { followUserIds } from '../services/followServices.js';
+import Publication from "../models/publications.js";
+import { followUserIds } from "../services/followServices.js";
 
 // Método de prueba del controlador publication
 export const testPublication = (req, res) => {
   return res.status(200).send({
-    message: "Mensaje enviado desde el controlador de Publication"
+    message: "Mensaje enviado desde el controlador de Publication",
   });
 };
 
@@ -15,10 +15,10 @@ export const savePublication = async (req, res) => {
     const params = req.body;
 
     // Verificar que llegue desde el body el parámetro text con su información
-    if(!params.text){
+    if (!params.text) {
       return res.status(400).send({
         status: "error",
-        message: "Debes enviar el texto de la publicación"
+        message: "Debes enviar el texto de la publicación",
       });
     }
 
@@ -32,10 +32,10 @@ export const savePublication = async (req, res) => {
     const publicationStored = await newPublication.save();
 
     // Verificar que se guardó la nueva publicación en la BD (si existe publicationStored)
-    if(!publicationStored){
+    if (!publicationStored) {
       return res.status(500).send({
         status: "error",
-        message: "No se ha guardado la publicación"
+        message: "No se ha guardado la publicación",
       });
     }
 
@@ -43,14 +43,13 @@ export const savePublication = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "¡Publicación creada con éxito!",
-      publicationStored
+      publicationStored,
     });
-
   } catch (error) {
-    console.log(`Error al crear la publicación: ${ error }`);
+    console.log(`Error al crear la publicación: ${error}`);
     return res.status(500).send({
       status: "error",
-      message: "Error al crear la publicación"
+      message: "Error al crear la publicación",
     });
   }
 };
@@ -62,13 +61,15 @@ export const showPublication = async (req, res) => {
     const publicationId = req.params.id;
 
     // Buscar la publicación en la BD por ID
-    const publicationStored = await Publication.findById(publicationId).populate('user_id', 'name last_name');
+    const publicationStored = await Publication.findById(
+      publicationId
+    ).populate("user_id", "name last_name");
 
     // Verificar si existe la publicación en la BD
-    if(!publicationStored){
+    if (!publicationStored) {
       return res.status(404).send({
         status: "error",
-        message: "No existe la publicación"
+        message: "No existe la publicación",
       });
     }
 
@@ -76,14 +77,13 @@ export const showPublication = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "Publicación encontrada",
-      publication: publicationStored
+      publication: publicationStored,
     });
-
   } catch (error) {
-    console.log(`Error al mostrar la publicación: ${ error }`);
+    console.log(`Error al mostrar la publicación: ${error}`);
     return res.status(500).send({
       status: "error",
-      message: "Error al mostrar la publicación"
+      message: "Error al mostrar la publicación",
     });
   }
 };
@@ -95,13 +95,17 @@ export const deletePublication = async (req, res) => {
     const publicationId = req.params.id;
 
     // Buscar la publicación en la BD y la eliminamos
-    const publicationDeleted = await Publication.findOneAndDelete({ user_id: req.user.userId, _id: publicationId}).populate('user_id', 'name last_name');
+    const publicationDeleted = await Publication.findOneAndDelete({
+      user_id: req.user.userId,
+      _id: publicationId,
+    }).populate("user_id", "name last_name");
 
     // Verificar si existe la publicación en la BD y si se eliminó de la BD
-    if(!publicationDeleted){
+    if (!publicationDeleted) {
       return res.status(404).send({
         status: "error",
-        message: "No se ha encontrado o no tienes permiso para eliminar esta publicación"
+        message:
+          "No se ha encontrado o no tienes permiso para eliminar esta publicación",
       });
     }
 
@@ -109,14 +113,13 @@ export const deletePublication = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "Publicación eliminada con éxito",
-      publication: publicationDeleted
+      publication: publicationDeleted,
     });
-
   } catch (error) {
-    console.log(`Error al eliminar la publicación: ${ error }`);
+    console.log(`Error al eliminar la publicación: ${error}`);
     return res.status(500).send({
       status: "error",
-      message: "Error al eliminar la publicación"
+      message: "Error al eliminar la publicación",
     });
   }
 };
@@ -139,20 +142,23 @@ export const publicationsUser = async (req, res) => {
       limit: itemsPerPage,
       sort: { created_at: -1 },
       populate: {
-        path: 'user_id',
-        select: '-password -role -__v -email'
+        path: "user_id",
+        select: "-password -role -__v -email",
       },
-      lean: true
+      lean: true,
     };
 
     // Buscar las publicaciones del usuario
-    const publications = await Publication.paginate({ user_id: userId}, options);
+    const publications = await Publication.paginate(
+      { user_id: userId },
+      options
+    );
 
     // Verificar si existen publicaciones
-    if(!publications.docs || publications.docs.length <= 0){
+    if (!publications.docs || publications.docs.length <= 0) {
       return res.status(404).send({
         status: "error",
-        message: "No hay pulicaciones para mostrar"
+        message: "No hay pulicaciones para mostrar",
       });
     }
 
@@ -164,14 +170,13 @@ export const publicationsUser = async (req, res) => {
       total: publications.totalDocs,
       pages: publications.totalPages,
       page: publications.page,
-      limit_items_ppage: publications.limit
+      limit_items_ppage: publications.limit,
     });
-
   } catch (error) {
-    console.log(`Error al mostrar las publicaciones: ${ error }`);
+    console.log(`Error al mostrar las publicaciones: ${error}`);
     return res.status(500).send({
       status: "error",
-      message: "Error al mostrar las publicaciones"
+      message: "Error al mostrar las publicaciones",
     });
   }
 };
@@ -185,18 +190,18 @@ export const uploadMedia = async (req, res) => {
     // Verificar si la publicación existe en la BD
     const publicationExists = await Publication.findById(publicationId);
 
-    if(!publicationExists){
+    if (!publicationExists) {
       return res.status(404).send({
         status: "error",
-        message: "No existe la publicación"
+        message: "No existe la publicación",
       });
     }
 
     // Verificar si se ha recibido en la petición un archivo
-    if(!req.file){
+    if (!req.file) {
       return res.status(400).send({
         status: "error",
-        message: "La petición no incluye la imagen"
+        message: "La petición no incluye la imagen",
       });
     }
 
@@ -207,13 +212,13 @@ export const uploadMedia = async (req, res) => {
     const publicationUpdated = await Publication.findByIdAndUpdate(
       publicationId,
       { file: mediaUrl },
-      { new: true}
+      { new: true }
     );
 
-    if(!publicationUpdated){
+    if (!publicationUpdated) {
       return res.status(500).send({
         status: "error",
-        message: "Error en la subida de la imagen"
+        message: "Error en la subida de la imagen",
       });
     }
 
@@ -222,14 +227,13 @@ export const uploadMedia = async (req, res) => {
       status: "success",
       message: "Archivo subido con éxito",
       publication: publicationUpdated,
-      file: mediaUrl
+      file: mediaUrl,
     });
-
   } catch (error) {
-    console.log(`Error al mostrar las publicaciones: ${ error }`);
+    console.log(`Error al mostrar las publicaciones: ${error}`);
     return res.status(500).send({
       status: "error",
-      message: "Error al mostrar las publicaciones"
+      message: "Error al mostrar las publicaciones",
     });
   }
 };
@@ -241,27 +245,28 @@ export const showMedia = async (req, res) => {
     const publicationId = req.params.id;
 
     // Buscar la publicación en la base de datos
-    const publication = await Publication.findById(publicationId).select('file');
+    const publication = await Publication.findById(publicationId).select(
+      "file"
+    );
 
     // Verificar si la publicación existe y tiene un archivo
     if (!publication || !publication.file) {
       return res.status(404).send({
         status: "error",
-        message: "No existe el archivo para esta publicación"
+        message: "No existe el archivo para esta publicación",
       });
     }
 
     // Redirigir a la URL de la imagen en Cloudinary
     return res.redirect(publication.file);
-
   } catch (error) {
     console.error("Error al mostrar el archivo de la publicación", error);
     return res.status(500).send({
       status: "error",
-      message: "Error al mostrar archivo en la publicación"
+      message: "Error al mostrar archivo en la publicación",
     });
   }
-}
+};
 
 // Método para listar todas las publicaciones de los usuarios que yo sigo (Feed)
 export const feed = async (req, res) => {
@@ -273,10 +278,10 @@ export const feed = async (req, res) => {
     let itemsPerPage = req.query.limit ? parseInt(req.query.limit, 10) : 5;
 
     // Verificar que el usuario autenticado existe y tiene un userId
-    if(!req.user || !req.user.userId) {
+    if (!req.user || !req.user.userId) {
       return res.status(404).send({
         status: "error",
-        message: "Usuario no autenticado"
+        message: "Usuario no autenticado",
       });
     }
 
@@ -284,10 +289,10 @@ export const feed = async (req, res) => {
     const myFollows = await followUserIds(req);
 
     // Verificar que la lista de usuarios que sigo no esté vacía
-    if (!myFollows.following || myFollows.following.length === 0){
+    if (!myFollows.following || myFollows.following.length === 0) {
       return res.status(404).send({
         status: "error",
-        message: "No sigues a ningún usuario, no hay publicaciones que mostrar"
+        message: "No sigues a ningún usuario, no hay publicaciones que mostrar",
       });
     }
 
@@ -297,15 +302,15 @@ export const feed = async (req, res) => {
       limit: itemsPerPage,
       sort: { created_at: -1 },
       populate: {
-        path: 'user_id',
-        select: '-password -role -__v -email'
+        path: "user_id",
+        select: "-password -role -__v -email",
       },
-      lean: true
+      lean: true,
     };
 
     // Consulta a la base de datos con paginate
     const result = await Publication.paginate(
-      { user_id: { $in: myFollows.following }},
+      { user_id: { $in: myFollows.following } },
       options
     );
 
@@ -313,7 +318,7 @@ export const feed = async (req, res) => {
     if (!result.docs || result.docs.length <= 0) {
       return res.status(404).send({
         status: "error",
-        message: "No hay publicaciones para mostrar"
+        message: "No hay publicaciones para mostrar",
       });
     }
 
@@ -325,13 +330,12 @@ export const feed = async (req, res) => {
       total: result.totalDocs,
       pages: result.totalPages,
       page: result.page,
-      limit: result.limit
+      limit: result.limit,
     });
-
   } catch (error) {
     return res.status(500).send({
       status: "error",
-      message: "Error al mostrar las publicaciones en el feed"
+      message: "Error al mostrar las publicaciones en el feed",
     });
   }
-}
+};

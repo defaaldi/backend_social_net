@@ -1,12 +1,11 @@
-import Follow from '../models/follows.js';
-import User from '../models/users.js';
-import { ensureAuth } from '../middlewares/auth.js';
+import Follow from "../models/follows.js";
+import User from "../models/users.js";
 import { followUserIds } from "../services/followServices.js";
 
 // Método de prueba del controlador follow
 export const testFollow = (req, res) => {
   return res.status(200).send({
-    message: "Mensaje enviado desde el controlador de Follow"
+    message: "Mensaje enviado desde el controlador de Follow",
   });
 };
 
@@ -17,71 +16,73 @@ export const saveFollow = async (req, res) => {
     const { followed_user } = req.body;
 
     // Obtener el ID del usuario autenticado que va a buscar a otro usuario para seguir
-    const identity = req.user; 
+    const identity = req.user;
 
     // Verificar si identity contiene al usuario autenticado
-    if(!identity || !identity.userId){
+    if (!identity || !identity.userId) {
       return res.status(400).send({
         status: "error",
-        message: "No se ha proporcionado el usuario para realizar el following"
+        message: "No se ha proporcionado el usuario para realizar el following",
       });
     }
 
     // Verificar si el usuario está intentando seguirse a sí mismo
-    if(identity.userId === followed_user){
+    if (identity.userId === followed_user) {
       return res.status(400).send({
         status: "error",
-        message: "No puedes seguirte a ti mismo"
+        message: "No puedes seguirte a ti mismo",
       });
     }
 
     // Verificar si usuario a seguir existe
     const followedUser = await User.findById(followed_user);
 
-    if(!followedUser){
+    if (!followedUser) {
       return res.status(404).send({
         status: "error",
-        message: "El usuario que intentas seguir no existe"
+        message: "El usuario que intentas seguir no existe",
       });
     }
 
     // Verificar si ya existe un seguimiento con los mismos usuarios
     const existingFollow = await Follow.findOne({
       following_user: identity.userId,
-      followed_user: followed_user
+      followed_user: followed_user,
     });
 
-    if(existingFollow){
+    if (existingFollow) {
       return res.status(400).send({
         status: "error",
-        message: "Ya estás siguiendo a este usuario"
+        message: "Ya estás siguiendo a este usuario",
       });
     }
 
     // Crear el objeto con el modelo follow
     const newFollow = new Follow({
       following_user: identity.userId,
-      followed_user: followed_user
+      followed_user: followed_user,
     });
 
     // Guardar objeto en la BD}
     const followStored = await newFollow.save();
 
     // Verificar si se guardó correctamente en la BD
-    if(!followStored){
+    if (!followStored) {
       return res.status(500).send({
         status: "error",
-        message: "No se ha podido seguir al usuario"
+        message: "No se ha podido seguir al usuario",
       });
     }
 
     // Obtener el nombre y apellido del usuario seguido
-    const followedUserDetails = await User.findById(followed_user).select('name last_name');
+    const followedUserDetails = await User.findById(followed_user).select(
+      "name last_name"
+    );
 
-    if(!followedUserDetails){
+    if (!followedUserDetails) {
       return res.status(404).send({
         status: "error",
-        message: "Usuario no encontrado"
+        message: "Usuario no encontrado",
       });
     }
 
@@ -90,36 +91,34 @@ export const saveFollow = async (req, res) => {
       ...followStored.toObject(),
       followedUser: {
         name: followedUserDetails.name,
-        last_name: followedUserDetails.last_name
-      }
+        last_name: followedUserDetails.last_name,
+      },
     };
 
     // Devolver respuesta
     return res.status(200).json({
       status: "success",
       identity: req.user,
-      follow: combinedFollowData
+      follow: combinedFollowData,
     });
-
   } catch (error) {
-    if (error.code === 11000){
+    if (error.code === 11000) {
       return res.status(400).send({
         status: "error",
-        message: "Ya estás siguiendo a este usuario"
+        message: "Ya estás siguiendo a este usuario",
       });
-    };
+    }
     return res.status(500).send({
       status: "error",
-      message: "Error al seguir al usuario"
+      message: "Error al seguir al usuario",
     });
   }
 };
 
-
 // Método para eliminar un follow (dejar de seguir)
 export const unfollow = async (req, res) => {
   try {
-    // Obtener el Id del usuario indentificado
+    // Obtener el Id del usuario indentificado desde el token
     const userId = req.user.userId;
 
     // Obtener el Id del usuario que sigo y quiero dejar de seguir
@@ -128,30 +127,29 @@ export const unfollow = async (req, res) => {
     // Búsqueda de las coincidencias de ambos usuarios y elimina
     const followDeleted = await Follow.findOneAndDelete({
       following_user: userId, // quien realiza el seguimiento
-      followed_user: followedId // a quien se quiere dejar de seguir
+      followed_user: followedId, // a quien se quiere dejar de seguir
     });
 
     // Verificar si se encontró el documento y lo eliminó
     if (!followDeleted) {
       return res.status(404).send({
         status: "error",
-        message: "No se encontró el seguimiento a eliminar."
+        message: "No se encontró el seguimiento a eliminar.",
       });
     }
 
     // Devolver respuesta
     return res.status(200).send({
       status: "success",
-      message: "Dejaste de seguir al usuario correctamente."
+      message: "Dejaste de seguir al usuario correctamente.",
     });
-
   } catch (error) {
     return res.status(500).send({
       status: "error",
-      message: "Error al dejar de seguir al usuario."
+      message: "Error al dejar de seguir al usuario.",
     });
   }
-}
+};
 
 // Método para listar usuarios que estoy siguiendo
 export const following = async (req, res) => {
@@ -173,11 +171,11 @@ export const following = async (req, res) => {
       page: page,
       limit: itemsPerPage,
       populate: {
-        path: 'followed_user',
-        select: '-password -role -__v -email'
+        path: "followed_user",
+        select: "-password -role -__v -email",
       },
-      lean: true
-    }
+      lean: true,
+    };
 
     // Buscar en la BD los seguidores y popular los datos de los usuarios
     const follows = await Follow.paginate({ following_user: userId }, options);
@@ -195,16 +193,15 @@ export const following = async (req, res) => {
       page: follows.page,
       limit: follows.limit,
       users_following: followUsers.following,
-      user_follow_me: followUsers.followers
+      user_follow_me: followUsers.followers,
     });
-
   } catch (error) {
     return res.status(500).send({
       status: "error",
-      message: "Error al listar los usuarios que estás siguiendo."
+      message: "Error al listar los usuarios que estás siguiendo.",
     });
   }
-}
+};
 
 // Método para listar los usuarios que me siguen
 export const followers = async (req, res) => {
@@ -226,12 +223,12 @@ export const followers = async (req, res) => {
       page: page,
       limit: itemsPerPage,
       populate: {
-        path: 'following_user',
-        select: '-password -role -__v -email'
+        path: "following_user",
+        select: "-password -role -__v -email",
       },
-      lean: true
-    }
-    
+      lean: true,
+    };
+
     // Buscar en la BD los seguidores y popular los datos de los usuarios
     const follows = await Follow.paginate({ followed_user: userId }, options);
 
@@ -248,16 +245,12 @@ export const followers = async (req, res) => {
       page: follows.page,
       limit: follows.limit,
       users_following: followUsers.following,
-      user_follow_me: followUsers.followers
+      user_follow_me: followUsers.followers,
     });
-
   } catch (error) {
     return res.status(500).send({
       status: "error",
-      message: "Error al listar los usuarios que me siguen."
+      message: "Error al listar los usuarios que me siguen.",
     });
   }
-}
-
-
-
+};
